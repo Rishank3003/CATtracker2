@@ -391,30 +391,53 @@ option { background: var(--bg3); }
 .topic-group-body { padding-left: 12px; border-left: 2px solid var(--border); margin-left: 7px; }
 
 @media (max-width: 768px) {
-  .app-shell { flex-direction: column; }
-  /* Sidebar becomes a bottom nav bar */
+  .app-shell { flex-direction: column; display: block; }
+  /* Sidebar becomes a fixed bottom nav bar */
   .sidebar {
-    width: 100%; height: auto; position: fixed; bottom: 0; left: 0; top: auto;
-    flex-direction: row; border-right: none; border-top: 1px solid var(--border);
-    z-index: 50; background: var(--bg2); overflow: visible;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 64px;
+    position: fixed !important;
+    bottom: 0; left: 0; right: 0; top: auto !important;
+    flex-direction: row !important;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    background: var(--bg2);
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
   }
-  .sidebar-logo { display: none; }
-  .sidebar-footer { display: none; }
+  .sidebar-logo { display: none !important; }
+  .sidebar-footer { display: none !important; }
   .sidebar-nav {
-    display: flex; flex-direction: row; padding: 4px; width: 100%;
-    overflow-x: auto; gap: 2px; -webkit-overflow-scrolling: touch;
+    display: flex !important;
+    flex-direction: row !important;
+    padding: 6px 4px;
+    width: max-content;
+    min-width: 100%;
+    flex: 0 0 auto !important;
+    gap: 2px;
+    -webkit-overflow-scrolling: touch;
   }
-  .sidebar-nav::-webkit-scrollbar { display: none; }
+  .sidebar::-webkit-scrollbar { height: 0; display: none; }
   .nav-item {
-    flex-direction: column; gap: 2px; padding: 6px 10px; margin: 0;
-    min-width: 60px; flex-shrink: 0; font-size: 10px; text-align: center;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3px;
+    padding: 6px 12px !important;
+    margin: 0;
+    width: auto !important;
+    min-width: 62px;
+    flex-shrink: 0;
+    font-size: 10px;
+    text-align: center;
     border-radius: 8px;
   }
   .nav-item span:last-child { font-size: 9px; white-space: nowrap; }
-  .nav-icon { font-size: 16px; width: auto; }
+  .nav-icon { font-size: 18px; width: auto; }
   /* Main content gets bottom padding so nav doesn't cover it */
-  .main { padding-bottom: 70px; }
-  .page { padding: 20px 14px; }
+  .main { padding-bottom: 80px; }
+  .page { padding: 18px 14px; }
   .page-header h2 { font-size: 22px; }
   .charts-row { grid-template-columns: 1fr; }
   .metric-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -431,7 +454,7 @@ option { background: var(--bg3); }
   /* Data rows wrap better */
   .data-row { flex-wrap: wrap; font-size: 12px; gap: 6px; }
   /* Touch-friendly tap targets */
-  .nav-item, .btn, .pill-opt, .sec-tab, .topic-card { min-height: 38px; }
+  .btn, .pill-opt, .sec-tab, .topic-card { min-height: 38px; }
   /* Prevent iOS auto-zoom on input focus (needs >=16px) */
   input, select, textarea { font-size: 16px !important; }
   /* Modals fit screen */
@@ -441,8 +464,8 @@ option { background: var(--bg3); }
 }
 
 @media (max-width: 420px) {
-  .metric-grid { grid-template-columns: 1fr; }
-  .nav-item { min-width: 54px; padding: 6px 6px; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .nav-item { min-width: 56px; padding: 6px 8px !important; }
 }
 </style>
 </head>
@@ -1013,14 +1036,24 @@ async function handleAuthChange(user) {
     setSyncStatus('Loading your data…', 'var(--text3)');
     try {
       const doc = await fbDb.collection('users').doc(user.uid).get();
-      if (doc.exists && doc.data().state) {
-        const cloud = JSON.parse(doc.data().state);
-        if (cloud.topics && cloud.config) {
-          S = cloud;
+      if (doc.exists && doc.data() && doc.data().state) {
+        let cloud;
+        try { cloud = JSON.parse(doc.data().state); } catch { cloud = null; }
+        if (cloud && cloud.topics && cloud.config) {
+          // Merge cloud data over fresh defaults so any missing fields are filled
+          S = deepMerge(JSON.parse(JSON.stringify(DEFAULT_STATE)), cloud);
+          if (!S.mockImages) S.mockImages = [];
           localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
           setSyncStatus('✓ Synced from cloud', 'var(--success)');
-          renderPage(getActivePage());
-          updateSidebarDays();
+          // Re-render safely
+          try {
+            updateSidebarDays();
+            renderPage(getActivePage());
+          } catch (re) {
+            console.error('Re-render after sync failed:', re);
+          }
+        } else {
+          setSyncStatus('✓ Connected (no saved data)', 'var(--success)');
         }
       } else {
         // No cloud data yet — push current local data up
@@ -1028,7 +1061,8 @@ async function handleAuthChange(user) {
         setSyncStatus('✓ Synced', 'var(--success)');
       }
     } catch (e) {
-      setSyncStatus('Sync error: ' + e.message.slice(0,40), 'var(--danger)');
+      setSyncStatus('Sync error: ' + (e && e.message ? e.message.slice(0,40) : 'unknown'), 'var(--danger)');
+      console.error('Sync error:', e);
     }
   }
 }

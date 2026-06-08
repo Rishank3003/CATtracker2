@@ -500,6 +500,12 @@ option { background: var(--bg3); }
     <button class="nav-item" onclick="navigate('revision', this)">
       <span class="nav-icon">📅</span><span>Revision</span>
     </button>
+    <button class="nav-item" onclick="navigate('mockplan', this)">
+      <span class="nav-icon">🗓</span><span>Mock plan</span>
+    </button>
+    <button class="nav-item" onclick="navigate('sectionals', this)">
+      <span class="nav-icon">🎯</span><span>Sectionals</span>
+    </button>
     <button class="nav-item" onclick="navigate('settings', this)">
       <span class="nav-icon">⚙</span><span>Settings</span>
     </button>
@@ -759,6 +765,26 @@ option { background: var(--bg3); }
   <div id="rev-list"></div>
 </section>
 
+<!-- MOCK PLAN -->
+<section class="page" id="page-mockplan">
+  <div class="page-header">
+    <h2>Mock test schedule</h2>
+    <p>CAT 2026 · 52 tests · tap status to cycle Pending → Completed → Analysed</p>
+  </div>
+  <div class="metric-grid" id="mockplan-metrics"></div>
+  <div id="mockplan-list"></div>
+</section>
+
+<!-- SECTIONALS -->
+<section class="page" id="page-sectionals">
+  <div class="page-header">
+    <h2>Sectional test schedule</h2>
+    <p>CAT 2026 · 30 sectionals (10 VA + 10 DILR + 10 Quant)</p>
+  </div>
+  <div class="metric-grid" id="sectionals-metrics"></div>
+  <div id="sectionals-list"></div>
+</section>
+
 <!-- SETTINGS -->
 <section class="page" id="page-settings">
   <div class="page-header">
@@ -851,7 +877,7 @@ option { background: var(--bg3); }
 
 <script>
 // ─── STATE ───────────────────────────────────────────────────────────
-const STORAGE_KEY = 'cat_tracker_v10';
+const STORAGE_KEY = 'cat_tracker_v11';
 
 const DEFAULT_STATE = {
   config: { name: '', examDate: '2026-11-29', college: '', examYear: 'CAT 2026' },
@@ -966,7 +992,100 @@ const DEFAULT_STATE = {
   })(),
   revisions: [],
   milestones: [],
-  phases: []
+  phases: [],
+  mockPlan: (function() {
+    // type: P=Proctored SimCAT, T=Take-Home, C=Past CAT Paper
+    const rows = [
+      ['2026-06-07','Take-Home 1','T'],
+      ['2026-06-12','SimCAT 4 (Proctored)','P'],
+      ['2026-06-17','Take-Home 2','T'],
+      ['2026-06-20','CAT 2021 — Slot 1','C'],
+      ['2026-06-24','Take-Home 3','T'],
+      ['2026-06-26','SimCAT 5 (Proctored)','P'],
+      ['2026-07-04','Take-Home 4','T'],
+      ['2026-07-08','CAT 2021 — Slot 2','C'],
+      ['2026-07-10','SimCAT 6 (Proctored)','P'],
+      ['2026-07-15','Take-Home 5','T'],
+      ['2026-07-17','SimCAT 7 (Proctored)','P'],
+      ['2026-07-22','CAT 2021 — Slot 3','C'],
+      ['2026-07-26','Take-Home 6','T'],
+      ['2026-07-31','SimCAT 8 (Proctored)','P'],
+      ['2026-08-05','Take-Home 7','T'],
+      ['2026-08-07','SimCAT 9 (Proctored)','P'],
+      ['2026-08-12','CAT 2022 — Slot 1','C'],
+      ['2026-08-15','Take-Home 8','T'],
+      ['2026-08-19','CAT 2022 — Slot 2','C'],
+      ['2026-08-21','SimCAT 10 (Proctored)','P'],
+      ['2026-08-26','Take-Home 9','T'],
+      ['2026-08-28','SimCAT 11 (Proctored)','P'],
+      ['2026-09-02','CAT 2022 — Slot 3','C'],
+      ['2026-09-04','SimCAT 12 (Proctored)','P'],
+      ['2026-09-09','Take-Home 10','T'],
+      ['2026-09-11','SimCAT 13 (Proctored)','P'],
+      ['2026-09-16','CAT 2023 — Slot 1','C'],
+      ['2026-09-19','Take-Home 11','T'],
+      ['2026-09-23','CAT 2023 — Slot 2','C'],
+      ['2026-09-25','SimCAT 14 (Proctored)','P'],
+      ['2026-09-30','Take-Home 12','T'],
+      ['2026-10-03','SimCAT 15 (Proctored)','P'],
+      ['2026-10-06','CAT 2023 — Slot 3','C'],
+      ['2026-10-09','Take-Home 13','T'],
+      ['2026-10-12','CAT 2024 — Slot 1','C'],
+      ['2026-10-14','Take-Home 14','T'],
+      ['2026-10-16','SimCAT 16 (Proctored)','P'],
+      ['2026-10-19','Take-Home 15','T'],
+      ['2026-10-21','CAT 2024 — Slot 2','C'],
+      ['2026-10-23','SimCAT 17 (Proctored)','P'],
+      ['2026-10-27','Take-Home 16','T'],
+      ['2026-10-30','SimCAT 18 (Proctored)','P'],
+      ['2026-11-02','Take-Home 17','T'],
+      ['2026-11-04','CAT 2024 — Slot 3','C'],
+      ['2026-11-06','Take-Home 18','T'],
+      ['2026-11-08','CAT 2025 — Slot 1','C'],
+      ['2026-11-10','Take-Home 19','T'],
+      ['2026-11-13','SimCAT 19 (Proctored)','P'],
+      ['2026-11-16','Take-Home 20','T'],
+      ['2026-11-18','CAT 2025 — Slot 2','C'],
+      ['2026-11-20','SimCAT 20 (Proctored)','P'],
+      ['2026-11-23','CAT 2025 — Slot 3 (final mock)','C']
+    ];
+    return rows.map((r,i) => ({ id:'m'+i, date:r[0], name:r[1], type:r[2], status:'pending' }));
+  })(),
+  sectionalPlan: (function() {
+    const rows = [
+      ['2026-06-09','VA — Sectional 1','VA'],
+      ['2026-06-13','DILR — Sectional 1','DILR'],
+      ['2026-06-16','Quant — Sectional 1','Quant'],
+      ['2026-06-19','VA — Sectional 2','VA'],
+      ['2026-06-22','DILR — Sectional 2','DILR'],
+      ['2026-06-27','Quant — Sectional 2','Quant'],
+      ['2026-06-30','VA — Sectional 3','VA'],
+      ['2026-07-02','DILR — Sectional 3','DILR'],
+      ['2026-07-06','Quant — Sectional 3','Quant'],
+      ['2026-07-12','VA — Sectional 4','VA'],
+      ['2026-07-14','DILR — Sectional 4','DILR'],
+      ['2026-07-19','Quant — Sectional 4','Quant'],
+      ['2026-07-23','VA — Sectional 5','VA'],
+      ['2026-07-27','DILR — Sectional 5','DILR'],
+      ['2026-07-29','Quant — Sectional 5','Quant'],
+      ['2026-08-03','VA — Sectional 6','VA'],
+      ['2026-08-08','DILR — Sectional 6','DILR'],
+      ['2026-08-11','Quant — Sectional 6','Quant'],
+      ['2026-08-14','VA — Sectional 7','VA'],
+      ['2026-08-18','DILR — Sectional 7','DILR'],
+      ['2026-08-24','Quant — Sectional 7','Quant'],
+      ['2026-08-31','VA — Sectional 8','VA'],
+      ['2026-09-06','DILR — Sectional 8','DILR'],
+      ['2026-09-13','Quant — Sectional 8','Quant'],
+      ['2026-09-18','VA — Sectional 9','VA'],
+      ['2026-09-22','DILR — Sectional 9','DILR'],
+      ['2026-09-28','Quant — Sectional 9','Quant'],
+      ['2026-10-08','VA — Sectional 10','VA'],
+      ['2026-10-18','DILR — Sectional 10','DILR'],
+      ['2026-10-25','Quant — Sectional 10','Quant']
+    ];
+    return rows.map((r,i) => ({ id:'s'+i, date:r[0], name:r[1], section:r[2], status:'pending' }));
+  })()
 };
 
 function deepMerge(target, source) {
@@ -994,6 +1113,9 @@ function loadState() {
       const needsMigration = !topics || topics.length === 0 || topics.some(t => !t.subType);
       if (needsMigration) merged.topics[sec] = fresh.topics[sec];
     });
+    // Ensure new schedule arrays exist
+    if (!merged.mockPlan || !merged.mockPlan.length) merged.mockPlan = fresh.mockPlan;
+    if (!merged.sectionalPlan || !merged.sectionalPlan.length) merged.sectionalPlan = fresh.sectionalPlan;
 
     return merged;
   } catch { return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
@@ -1014,9 +1136,20 @@ const firebaseConfig = {
 let fbAuth = null, fbDb = null, fbUser = null, fbReady = false;
 let cloudSaveTimer = null;
 
-function initFirebase() {
+function initFirebase(attempt) {
+  attempt = attempt || 0;
   try {
-    if (typeof firebase === 'undefined') { console.warn('Firebase SDK not loaded'); return; }
+    if (typeof firebase === 'undefined') {
+      // SDK not loaded yet — retry up to ~10 seconds
+      if (attempt < 50) {
+        setTimeout(() => initFirebase(attempt + 1), 200);
+      } else {
+        console.warn('Firebase SDK failed to load after retries');
+        setSyncStatus('Cloud unavailable (offline?)', 'var(--text3)');
+      }
+      return;
+    }
+    if (fbReady) return; // already initialised
     firebase.initializeApp(firebaseConfig);
     fbAuth = firebase.auth();
     fbDb = firebase.firestore();
@@ -1025,6 +1158,7 @@ function initFirebase() {
   } catch (e) {
     console.error('Firebase init failed:', e);
     fbReady = false;
+    setSyncStatus('Cloud init error', 'var(--danger)');
   }
 }
 
@@ -1179,6 +1313,8 @@ function renderPage(id) {
   if (id === 'weak') renderWeak();
   if (id === 'targets') renderTargets();
   if (id === 'revision') renderRevision();
+  if (id === 'mockplan') renderMockPlan();
+  if (id === 'sectionals') renderSectionals();
   if (id === 'settings') renderSettings();
 }
 
@@ -2044,6 +2180,143 @@ function addRevision() {
 
 function toggleRevision(i) { S.revisions[i].done = !S.revisions[i].done; save(); renderRevision(); }
 function deleteRevision(i) { S.revisions.splice(i,1); save(); renderRevision(); }
+
+// ─── MOCK PLAN & SECTIONAL SCHEDULES ─────────────────────────────────
+const STATUS_CYCLE = ['pending', 'completed', 'analysed'];
+const STATUS_META = {
+  pending:   { label: 'Pending',   color: 'var(--text3)',   bg: 'var(--bg4)' },
+  completed: { label: 'Completed', color: 'var(--warn)',    bg: 'rgba(232,184,122,0.15)' },
+  analysed:  { label: 'Analysed',  color: 'var(--success)', bg: 'rgba(122,232,176,0.15)' }
+};
+const MOCK_TYPE_META = {
+  P: { label: 'Proctored', color: '#e8a87a' },
+  T: { label: 'Take-Home', color: '#7ab8e8' },
+  C: { label: 'Past Paper', color: '#7ae8b0' }
+};
+const SECTIONAL_META = {
+  VA:    { color: '#7ab8e8' },
+  DILR:  { color: '#7ae8b0' },
+  Quant: { color: '#e8a87a' }
+};
+
+function niceDate2(ds) {
+  try { return new Date(ds + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' }); }
+  catch { return ds; }
+}
+
+function statusBar(current) {
+  return STATUS_CYCLE.map(s => {
+    const m = STATUS_META[s];
+    const on = s === current;
+    return `<span style="font-size:10px;font-family:var(--font-mono);padding:3px 8px;border-radius:20px;background:${on?m.bg:'transparent'};color:${on?m.color:'var(--text3)'};border:1px solid ${on?m.color+'44':'var(--border)'};opacity:${on?1:0.5}">${m.label}</span>`;
+  }).join('');
+}
+
+function renderMockPlan() {
+  const plan = S.mockPlan || [];
+  const counts = { pending:0, completed:0, analysed:0 };
+  plan.forEach(m => counts[m.status] = (counts[m.status]||0) + 1);
+
+  document.getElementById('mockplan-metrics').innerHTML = [
+    { label:'Total mocks', val: plan.length, sub:'scheduled' },
+    { label:'Pending', val: counts.pending, sub:'to attempt' },
+    { label:'Completed', val: counts.completed, sub:'taken' },
+    { label:'Analysed', val: counts.analysed, sub:'reviewed' }
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+
+  // Group by month
+  const months = {};
+  plan.forEach((m, i) => {
+    const mo = new Date(m.date + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' });
+    if (!months[mo]) months[mo] = [];
+    months[mo].push({ m, i });
+  });
+
+  let html = '';
+  Object.entries(months).forEach(([mo, items]) => {
+    html += `<div class="card" style="margin-bottom:12px">
+      <div class="card-title">${mo}</div>`;
+    items.forEach(({ m, i }) => {
+      const tm = MOCK_TYPE_META[m.type] || { label:'Test', color:'var(--text3)' };
+      html += `<div class="data-row" style="gap:10px;align-items:center">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);width:70px;flex-shrink:0">${niceDate2(m.date)}</span>
+        <span style="flex:1;font-size:13px;min-width:120px">${m.name}</span>
+        <span style="font-size:10px;font-family:var(--font-mono);color:${tm.color};flex-shrink:0">${tm.label}</span>
+        <button onclick="cycleMockStatus(${i})" style="background:none;border:none;cursor:pointer;padding:0;display:flex;gap:4px;flex-wrap:wrap">${statusBar(m.status)}</button>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('mockplan-list').innerHTML = html;
+}
+
+function cycleMockStatus(i) {
+  const m = S.mockPlan[i];
+  const cur = STATUS_CYCLE.indexOf(m.status);
+  const next = STATUS_CYCLE[(cur + 1) % STATUS_CYCLE.length];
+  m.status = next;
+
+  // When marked completed, prompt for scores and add to Mock Tests
+  if (next === 'completed' && !m.linkedMock) {
+    const addScores = confirm(`Marked "${m.name}" as completed.\n\nAdd your scores now? (OK = enter scores, Cancel = just mark done)`);
+    if (addScores) {
+      const varc = parseInt(prompt('VARC score (out of 72):', '')) || 0;
+      const dilr = parseInt(prompt('DILR score (out of 60):', '')) || 0;
+      const qa   = parseInt(prompt('QA score (out of 66):', '')) || 0;
+      const pctRaw = prompt('Overall percentile (optional, leave blank to skip):', '');
+      const pct = pctRaw ? parseFloat(pctRaw) : null;
+      S.mocks.push({ date: m.date, name: m.name, varc, dilr, qa, percentile: pct });
+      m.linkedMock = true;
+    }
+  }
+  save();
+  renderMockPlan();
+}
+
+function renderSectionals() {
+  const plan = S.sectionalPlan || [];
+  const counts = { pending:0, completed:0, analysed:0 };
+  plan.forEach(s => counts[s.status] = (counts[s.status]||0) + 1);
+
+  document.getElementById('sectionals-metrics').innerHTML = [
+    { label:'Total sectionals', val: plan.length, sub:'scheduled' },
+    { label:'Pending', val: counts.pending, sub:'to attempt' },
+    { label:'Completed', val: counts.completed, sub:'taken' },
+    { label:'Analysed', val: counts.analysed, sub:'reviewed' }
+  ].map(m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+
+  const months = {};
+  plan.forEach((s, i) => {
+    const mo = new Date(s.date + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' });
+    if (!months[mo]) months[mo] = [];
+    months[mo].push({ s, i });
+  });
+
+  let html = '';
+  Object.entries(months).forEach(([mo, items]) => {
+    html += `<div class="card" style="margin-bottom:12px">
+      <div class="card-title">${mo}</div>`;
+    items.forEach(({ s, i }) => {
+      const sm = SECTIONAL_META[s.section] || { color:'var(--text3)' };
+      html += `<div class="data-row" style="gap:10px;align-items:center">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);width:70px;flex-shrink:0">${niceDate2(s.date)}</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${sm.color};flex-shrink:0"></span>
+        <span style="flex:1;font-size:13px;min-width:120px">${s.name}</span>
+        <button onclick="cycleSectionalStatus(${i})" style="background:none;border:none;cursor:pointer;padding:0;display:flex;gap:4px;flex-wrap:wrap">${statusBar(s.status)}</button>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('sectionals-list').innerHTML = html;
+}
+
+function cycleSectionalStatus(i) {
+  const s = S.sectionalPlan[i];
+  const cur = STATUS_CYCLE.indexOf(s.status);
+  s.status = STATUS_CYCLE[(cur + 1) % STATUS_CYCLE.length];
+  save();
+  renderSectionals();
+}
 
 // ─── SETTINGS ────────────────────────────────────────────────────────
 function renderSettings() {

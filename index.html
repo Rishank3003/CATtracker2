@@ -456,28 +456,28 @@ option { background: var(--bg3); }
     <p id="sidebar-exam-year">CAT 2026</p>
   </div>
   <nav class="sidebar-nav">
-    <button class="nav-item active" onclick="navigate('dashboard')">
+    <button class="nav-item active" onclick="navigate('dashboard', this)">
       <span class="nav-icon">◈</span><span>Dashboard</span>
     </button>
-    <button class="nav-item" onclick="navigate('study')">
+    <button class="nav-item" onclick="navigate('study', this)">
       <span class="nav-icon">⏱</span><span>Study log</span>
     </button>
-    <button class="nav-item" onclick="navigate('mocks')">
+    <button class="nav-item" onclick="navigate('mocks', this)">
       <span class="nav-icon">📋</span><span>Mock tests</span>
     </button>
-    <button class="nav-item" onclick="navigate('topics')">
+    <button class="nav-item" onclick="navigate('topics', this)">
       <span class="nav-icon">◎</span><span>Topics</span>
     </button>
-    <button class="nav-item" onclick="navigate('weak')">
+    <button class="nav-item" onclick="navigate('weak', this)">
       <span class="nav-icon">⚡</span><span>Completion</span>
     </button>
-    <button class="nav-item" onclick="navigate('targets')">
+    <button class="nav-item" onclick="navigate('targets', this)">
       <span class="nav-icon">◉</span><span>Targets</span>
     </button>
-    <button class="nav-item" onclick="navigate('revision')">
+    <button class="nav-item" onclick="navigate('revision', this)">
       <span class="nav-icon">📅</span><span>Revision</span>
     </button>
-    <button class="nav-item" onclick="navigate('settings')">
+    <button class="nav-item" onclick="navigate('settings', this)">
       <span class="nav-icon">⚙</span><span>Settings</span>
     </button>
   </nav>
@@ -1115,12 +1115,25 @@ function save() {
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────
-function navigate(id) {
+function navigate(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  // Highlight the matching nav button
+  if (el && el.classList) {
+    el.classList.add('active');
+  } else {
+    document.querySelectorAll('.nav-item').forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'" + id + "'") !== -1) {
+        b.classList.add('active');
+      }
+    });
+  }
   renderPage(id);
+  const main = document.querySelector('.main');
+  if (main) main.scrollTop = 0;
+  window.scrollTo(0, 0);
 }
 
 function renderPage(id) {
